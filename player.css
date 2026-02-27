@@ -1,11 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
+
 /* CSS Reset & Basic Setup */
+:root {
+    --bg-gradient: radial-gradient(circle at center, #0a0a2a 0%, #000000 100%);
+    --jeopardy-blue: #060ce9;
+    --jeopardy-blue-dark: #03068a;
+    --neon-yellow: #ffcc00;
+    --text-light: #ffffff;
+}
+
 body {
     margin: 0;
     padding: 0;
-    background-color: #000000;
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: var(--bg-gradient);
+    font-family: 'Poppins', sans-serif;
     height: 100vh;
     overflow: hidden;
+    color: var(--text-light);
 }
 
 /* The Grid Layout */
@@ -13,41 +24,47 @@ body {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     grid-template-rows: 15vh repeat(5, 1fr);
-    gap: 5px;
-    padding: 5px;
+    gap: 8px;
+    padding: 15px;
     height: 85vh; /* 85% height to leave 15% for the scores */
     box-sizing: border-box;
 }
 
 /* Shared Cell Styles */
 .cell {
-    background-color: #060CE9;
+    background: linear-gradient(145deg, var(--jeopardy-blue), var(--jeopardy-blue-dark));
     display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
     padding: 10px;
+    border-radius: 8px;
     user-select: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .category {
-    color: #FFFFFF;
-    font-size: 2vw;
-    font-weight: bold;
+    color: var(--text-light);
+    font-size: 1.8vw;
+    font-weight: 700;
     text-transform: uppercase;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    letter-spacing: 1px;
 }
 
 .points {
-    color: #FFCC00;
+    color: var(--neon-yellow);
     font-size: 4vw;
     font-weight: 900;
-    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-    transition: opacity 0.3s ease;
+    text-shadow: 0 0 10px rgba(255, 204, 0, 0.6), 3px 3px 6px rgba(0, 0, 0, 0.8);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .points.answered {
     opacity: 0;
+    transform: scale(0.9);
+    pointer-events: none;
 }
 
 /* Score Board Styles */
@@ -56,29 +73,34 @@ body {
     justify-content: space-around;
     align-items: center;
     height: 15vh;
-    background-color: #000000;
-    border-top: 3px solid #FFFFFF;
+    background: rgba(0, 0, 0, 0.6);
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
 }
 
 .player-team {
-    color: #FFFFFF;
     text-align: center;
-    font-family: sans-serif;
     width: 30%;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
 }
 
 .team-name {
-    font-size: 2vw;
-    font-weight: bold;
+    font-size: 1.8vw;
+    font-weight: 700;
     text-transform: uppercase;
-    margin-bottom: 5px;
+    letter-spacing: 2px;
+    color: #b0b0b0;
+    margin-bottom: 2px;
 }
 
 .team-score {
-    font-size: 4vw;
-    color: #FFCC00;
+    font-size: 3.5vw;
+    color: var(--text-light);
     font-weight: 900;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
 }
 
 /* Full Screen Overlay for the Active Question */
@@ -89,10 +111,11 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: #060CE9;
-    color: #FFFFFF;
-    font-size: 5vw;
-    font-weight: bold;
+    background-color: rgba(6, 12, 233, 0.95);
+    backdrop-filter: blur(10px); /* Glassmorphism */
+    color: var(--text-light);
+    font-size: 4.5vw;
+    font-weight: 700;
     text-align: center;
     justify-content: center;
     align-items: center;
@@ -100,24 +123,26 @@ body {
     box-sizing: border-box;
     z-index: 100;
     text-transform: uppercase;
-    text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.8);
+    text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.9);
+    flex-direction: column;
+    animation: fadeIn 0.3s ease-out forwards;
 }
 
 .show-overlay {
     display: flex !important;
 }
 
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
 /* Media Image styles */
 .clue-image {
     max-width: 80vw;
     max-height: 50vh;
-    border: 4px solid #fff;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-}
-
-/* Adjust overlay to be a column to stack image and text */
-#active-clue-overlay {
-    flex-direction: column;
+    border: 4px solid var(--text-light);
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
