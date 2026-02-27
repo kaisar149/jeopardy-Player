@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Jeopardy - Moderator View</title>
+    <link rel="stylesheet" href="moderator.css">
+</head>
+<body>
+
+    <header>
+        <h1>Moderator Dashboard</h1>
+        <div class="setup-controls">
+            <input type="file" id="game-file" accept=".json">
+            <button id="open-player-window" onclick="window.open('player.html', '_blank')">1. Open Big Screen</button>
+            <button id="btn-reset-game" style="background-color: #dc3545; margin-left: 10px;">Reset Game</button>
+        </div>
+    </header>
+
+    <main>
+        <section id="mini-board-container">
+            <h2>Game Board</h2>
+            <div id="mini-board">
+                </div>
+        </section>
+
+        <section id="control-panel">
+            <div class="panel-section" id="active-clue-details">
+                <h2 id="current-category">Category - Point Value</h2>
+                
+                <div class="prompt-box">
+                    <strong>Prompt (What the Audience Sees):</strong>
+                    <p id="mod-prompt-text">Select a question from the board on the left.</p>
+
+                    <div id="mod-media-container" style="margin-top: 15px;"></div>
+                </div>
+                
+                <div class="response-box">
+                    <strong>Response (The Correct Answer):</strong>
+                    <p id="mod-response-text">...</p>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="btn-show-prompt">2. Show Prompt on Big Screen</button>
+                    <button id="btn-show-answer">3. Reveal Answer on Big Screen</button>
+                    <button id="btn-close-clue">4. Close Question & Return to Board</button>
+                </div>
+            </div>
+
+            <div class="panel-section" id="team-scores">
+                <h2>Teams & Scores</h2>
+                
+                <div class="team">
+                    <input type="text" value="Team 1">
+                    <div class="score-controls">
+                        <button class="minus">-</button>
+                        <span class="score">0</span>
+                        <button class="plus">+</button>
+                    </div>
+                </div>
+
+                <div class="team">
+                    <input type="text" value="Team 2">
+                    <div class="score-controls">
+                        <button class="minus">-</button>
+                        <span class="score">0</span>
+                        <button class="plus">+</button>
+                    </div>
+                </div>
+                
+                <div class="team">
+                    <input type="text" value="Team 3">
+                    <div class="score-controls">
+                        <button class="minus">-</button>
+                        <span class="score">0</span>
+                        <button class="plus">+</button>
+                    </div>
+                </div>
+
+                <button id="btn-add-team" style="width: 100%; margin-top: 15px; background-color: #28a745;">+ Add New Team</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="moderator.js"></script>
+</body>
+</html>
