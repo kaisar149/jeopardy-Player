@@ -22,7 +22,7 @@ gameChannel.onmessage = (event) => {
         const existingMedia = document.getElementById('media-container');
         if (existingMedia) existingMedia.remove();
 
-        // 1. Handle Images
+       // 1. Handle Images (Keep this exactly as it is)
         if (message.mediaType === 'image' && message.mediaUrl) {
             const img = document.createElement('img');
             img.src = message.mediaUrl;
@@ -32,41 +32,8 @@ gameChannel.onmessage = (event) => {
             textContainer.textContent = message.prompt;
         } 
         
-        // 2. Handle YouTube Audio (Hidden Iframe)
-        else if (message.mediaType === 'youtube' && message.mediaUrl) {
-            // Extract the video ID safely
-            let videoId = "";
-            if (message.mediaUrl.includes("v=")) {
-                videoId = message.mediaUrl.split('v=')[1].split('&')[0];
-            } else if (message.mediaUrl.includes("youtu.be/")) {
-                videoId = message.mediaUrl.split('youtu.be/')[1].split('?')[0];
-            }
-            
-            // Generate a random start time between 15 and 45 seconds
-            const randomStart = Math.floor(Math.random() * 30) + 15;
-            
-            const iframe = document.createElement('iframe');
-            iframe.id = 'media-container';
-            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&start=${randomStart}&controls=0&enablejsapi=1`;
-            
-            // THE FIX: Browsers suspend 0px iframes. Use 1px, make it transparent, and hide it off-screen.
-            iframe.style.width = '1px';
-            iframe.style.height = '1px';
-            iframe.style.opacity = '0.01';
-            iframe.style.position = 'absolute';
-            iframe.style.top = '-9999px'; 
-            iframe.style.left = '-9999px';
-            iframe.style.border = 'none';
-            
-            // THE FIX: Explicitly grant the autoplay permission attribute to this specific iframe
-            iframe.setAttribute('allow', 'autoplay');
-            
-            overlay.appendChild(iframe);
-            textContainer.innerHTML = "🎧 <em>Listening to Audio Clue...</em><br>" + message.prompt;
-        }
-
-        // 3. Handle Spotify Audio (Host controls it via the Moderator Screen!)
-        else if (message.mediaType === 'spotify') {
+        // 2. Handle YouTube and Spotify Audio (Host controls them via the Moderator Screen!)
+        else if (message.mediaType === 'youtube' || message.mediaType === 'spotify') {
             textContainer.innerHTML = "🎧 <em>Listening to Audio Clue...</em><br><br>" + message.prompt;
         }
         

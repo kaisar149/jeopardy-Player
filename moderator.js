@@ -65,22 +65,19 @@ function handleClueClick(col, row, clue, cellElement) {
     document.getElementById('mod-prompt-text').textContent = clue.prompt + (clue.url ? ` (${clue.type.toUpperCase()})` : '');
     document.getElementById('mod-response-text').textContent = clue.response;
     
-    // NEW: Handle Spotify on the Moderator Screen
+    // NEW: Handle Media on the Moderator Screen
     const mediaContainer = document.getElementById('mod-media-container');
     mediaContainer.innerHTML = ''; // Clear previous media
     
+    // --- SPOTIFY LOGIC ---
     if (clue.type === 'spotify' && clue.url) {
         let trackId = "";
         if (clue.url.includes("track/")) {
             trackId = clue.url.split('track/')[1].split('?')[0];
         }
         
-        // Generate the official Spotify Embed Widget
         const iframe = document.createElement('iframe');
-        
-        // THE ACTUAL FIX: The correct Spotify domain and proper Javascript ${trackId} syntax
         iframe.src = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`;
-        
         iframe.width = "100%";
         iframe.height = "152";
         //iframe.frameBorder = "0";
@@ -88,6 +85,29 @@ function handleClueClick(col, row, clue, cellElement) {
         iframe.style.borderRadius = "12px";
         
         mediaContainer.appendChild(iframe);
+    }
+    // --- YOUTUBE LOGIC ---
+    else if (clue.type === 'youtube' && clue.url) {
+        let videoId = "";
+        if (clue.url.includes("v=")) {
+            videoId = clue.url.split('v=')[1].split('&')[0];
+        } else if (clue.url.includes("youtu.be/")) {
+            videoId = clue.url.split('youtu.be/')[1].split('?')[0];
+        }
+        
+        if (videoId) {
+            const iframe = document.createElement('iframe');
+            // We do NOT use autoplay here so you have full control over when the audio starts!
+            iframe.src = `https://www.youtube.com/embed/${videoId}?controls=1`;
+            iframe.width = "100%";
+            iframe.height = "200"; // A nice height for the control panel
+            //iframe.frameBorder = "0";
+            iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+            iframe.allowFullscreen = true;
+            iframe.style.borderRadius = "8px";
+            
+            mediaContainer.appendChild(iframe);
+        }
     }
     
     cellElement.classList.add('answered');
