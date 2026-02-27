@@ -1,0 +1,123 @@
+/* CSS Reset & Basic Setup */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #000000;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* The Grid Layout */
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: 15vh repeat(5, 1fr);
+    gap: 5px;
+    padding: 5px;
+    height: 85vh; /* 85% height to leave 15% for the scores */
+    box-sizing: border-box;
+}
+
+/* Shared Cell Styles */
+.cell {
+    background-color: #060CE9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 10px;
+    user-select: none;
+}
+
+.category {
+    color: #FFFFFF;
+    font-size: 2vw;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.points {
+    color: #FFCC00;
+    font-size: 4vw;
+    font-weight: 900;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+    transition: opacity 0.3s ease;
+}
+
+.points.answered {
+    opacity: 0;
+}
+
+/* Score Board Styles */
+#score-board {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 15vh;
+    background-color: #000000;
+    border-top: 3px solid #FFFFFF;
+}
+
+.player-team {
+    color: #FFFFFF;
+    text-align: center;
+    font-family: sans-serif;
+    width: 30%;
+}
+
+.team-name {
+    font-size: 2vw;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.team-score {
+    font-size: 4vw;
+    color: #FFCC00;
+    font-weight: 900;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Full Screen Overlay for the Active Question */
+#active-clue-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #060CE9;
+    color: #FFFFFF;
+    font-size: 5vw;
+    font-weight: bold;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    padding: 10%;
+    box-sizing: border-box;
+    z-index: 100;
+    text-transform: uppercase;
+    text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.8);
+}
+
+.show-overlay {
+    display: flex !important;
+}
+
+/* Media Image styles */
+.clue-image {
+    max-width: 80vw;
+    max-height: 50vh;
+    border: 4px solid #fff;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+/* Adjust overlay to be a column to stack image and text */
+#active-clue-overlay {
+    flex-direction: column;
+}
