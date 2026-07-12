@@ -4,15 +4,26 @@ let gameData = null;
 let activeClueId = null; 
 let currentClueValue = 0; 
 let dailyDoubleId = null; 
-let timerInterval = null; // NEW: Timer variables
+let timerInterval = null; 
 let timerSeconds = 30;
+let buzzerOrder = []; // NEW: Array to track who buzzed in
 
 document.getElementById('game-file').addEventListener('change', handleFileUpload);
 
 gameChannel.onmessage = (event) => {
-    if (event.data.type === 'PLAYER_READY' && gameData) {
+    const message = event.data;
+    
+    if (message.type === 'PLAYER_READY' && gameData) {
         gameChannel.postMessage({ type: 'LOAD_GAME', data: gameData });
         setTimeout(broadcastScores, 500);
+    }
+    // NEW: Catch buzzers and rank them
+    else if (message.type === 'BUZZ_IN') {
+        if (!buzzerOrder.includes(message.team)) {
+            buzzerOrder.push(message.team);
+            renderBuzzerList();
+            gameChannel.postMessage({ type: 'BUZZER_ORDER', order: buzzerOrder });
+        }
     }
 };
 
@@ -166,6 +177,11 @@ document.getElementById('btn-show-prompt').addEventListener('click', () => {
         mediaType: clue.type || 'text',
         mediaUrl: clue.url || null
     });
+
+    // NEW: Enable buzzers
+    buzzerOrder = [];
+    renderBuzzerList();
+    gameChannel.postMessage({ type: 'ENABLE_BUZZERS' });
 });
 
 document.getElementById('btn-show-answer').addEventListener('click', () => {
@@ -184,9 +200,13 @@ document.getElementById('btn-close-clue').addEventListener('click', () => {
     activeClueId = null;
     currentClueValue = 0; 
     
-    // NEW: Reset and hide timer when closing clue
     if (timerInterval) clearInterval(timerInterval);
     gameChannel.postMessage({ type: 'HIDE_TIMER' });
+
+    // NEW: Disable buzzers
+    buzzerOrder = [];
+    renderBuzzerList();
+    gameChannel.postMessage({ type: 'DISABLE_BUZZERS' });
 });
 
 function attachTeamListeners(teamDiv) {
@@ -276,9 +296,13 @@ document.getElementById('btn-reset-game').addEventListener('click', () => {
     activeClueId = null;
     currentClueValue = 0;
     
-    // NEW: Stop the timer if running
     if (timerInterval) clearInterval(timerInterval);
     gameChannel.postMessage({ type: 'HIDE_TIMER' });
+
+    // NEW: Disable buzzers on reset
+    buzzerOrder = [];
+    renderBuzzerList();
+    gameChannel.postMessage({ type: 'DISABLE_BUZZERS' });
 
     gameChannel.postMessage({ type: 'RESET_GAME' });
     broadcastScores(); 
@@ -311,12 +335,10 @@ const timerInput = document.getElementById('timer-input');
 document.getElementById('btn-start-timer').addEventListener('click', () => {
     if (timerInterval) clearInterval(timerInterval);
     
-    // Grab the time from the input box
     timerSeconds = parseInt(timerInput.value, 10) || 0;
     modTimerDisplay.textContent = timerSeconds;
     gameChannel.postMessage({ type: 'SYNC_TIMER', time: timerSeconds });
 
-    // Tick down every 1 second
     timerInterval = setInterval(() => {
         timerSeconds--;
         if (timerSeconds <= 0) {
@@ -330,12 +352,39 @@ document.getElementById('btn-start-timer').addEventListener('click', () => {
 
 document.getElementById('btn-stop-timer').addEventListener('click', () => {
     if (timerInterval) clearInterval(timerInterval);
-    timerInput.value = timerSeconds; // Overwrite input so "Start" resumes from the paused time
+    timerInput.value = timerSeconds; 
 });
 
 document.getElementById('btn-reset-timer').addEventListener('click', () => {
     if (timerInterval) clearInterval(timerInterval);
     timerSeconds = parseInt(timerInput.value, 10) || 30; 
     modTimerDisplay.textContent = timerSeconds;
-    gameChannel.postMessage({ type: 'HIDE_TIMER' }); // Hide it on the big screen until started again
+    gameChannel.postMessage({ type: 'HIDE_TIMER' }); 
+});
+
+// --- BUZZER LOGIC ---
+function renderBuzzerList() {
+    const list = document.getElementById('buzzer-list');
+    list.innerHTML = '';
+    
+    if (buzzerOrder.length === 0) {
+        list.innerHTML = '<li style="color: #666; font-style: italic;">No buzzes yet.</li>';
+        return;
+    }
+    
+    buzzerOrder.forEach((team, index) => {
+        const li = document.createElement('li');
+        li.style.padding = '8px 5px';
+        li.style.borderBottom = '1px solid #333';
+        li.style.color = index === 0 ? 'var(--neon-yellow)' : 'white';
+        li.style.fontWeight = index === 0 ? 'bold' : 'normal';
+        li.textContent = `${index + 1}. ${team}`;
+        list.appendChild(li);
+    });
+}
+
+document.getElementById('btn-clear-buzzers').addEventListener('click', () => {
+    buzzerOrder = [];
+    renderBuzzerList();
+    gameChannel.postMessage({ type: 'ENABLE_BUZZERS' }); 
 });
