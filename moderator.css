@@ -252,3 +252,10 @@ main {
         height: 50vh; /* Give board fixed height on small screens */
     }
 }
+
+/* Daily Double Styling for Host View */
+.cell.points.daily-double-mod {
+    background-color: #8a0303;
+    border-color: var(--neon-yellow);
+    flex-direction: column;
+}

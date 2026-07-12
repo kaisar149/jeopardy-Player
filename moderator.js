@@ -3,6 +3,7 @@ const gameChannel = new BroadcastChannel('jeopardy_game');
 let gameData = null;
 let activeClueId = null; 
 let currentClueValue = 0; 
+let dailyDoubleId = null; // NEW: Track the Daily Double location
 
 document.getElementById('game-file').addEventListener('change', handleFileUpload);
 
@@ -35,6 +36,11 @@ function buildModeratorBoard(data) {
     const board = document.getElementById('mini-board');
     board.innerHTML = ''; 
 
+    // NEW: Randomly select the Daily Double location
+    const randomCol = Math.floor(Math.random() * data.categories.length);
+    const randomRow = Math.floor(Math.random() * 5);
+    dailyDoubleId = `clue-${randomCol}-${randomRow}`;
+
     data.categories.forEach(category => {
         const catDiv = document.createElement('div');
         catDiv.className = 'cell category';
@@ -48,7 +54,14 @@ function buildModeratorBoard(data) {
             const pointsDiv = document.createElement('div');
             pointsDiv.className = 'cell points';
             pointsDiv.id = `mod-clue-${col}-${row}`;
-            pointsDiv.textContent = clue.points;
+            
+            // NEW: Mark it clearly for the moderator
+            if (`clue-${col}-${row}` === dailyDoubleId) {
+                pointsDiv.classList.add('daily-double-mod');
+                pointsDiv.innerHTML = `${clue.points}<br><span style="font-size: 0.7rem; color: var(--neon-yellow);">(DD)</span>`;
+            } else {
+                pointsDiv.textContent = clue.points;
+            }
             
             pointsDiv.addEventListener('click', () => {
                 if (!pointsDiv.classList.contains('answered')) {
@@ -61,13 +74,14 @@ function buildModeratorBoard(data) {
 }
 
 function handleClueClick(col, row, clue, cellElement) {
-    document.getElementById('current-category').textContent = `${gameData.categories[col].name} - ${clue.points}`;
+    const isDailyDouble = (`clue-${col}-${row}` === dailyDoubleId);
+
+    document.getElementById('current-category').textContent = `${gameData.categories[col].name} - ${clue.points} ${isDailyDouble ? '🚨 [DAILY DOUBLE] 🚨' : ''}`;
     document.getElementById('mod-prompt-text').textContent = clue.prompt + (clue.url ? ` (${clue.type.toUpperCase()})` : '');
     document.getElementById('mod-response-text').textContent = clue.response;
     
-    // NEW: Handle Media on the Moderator Screen
     const mediaContainer = document.getElementById('mod-media-container');
-    mediaContainer.innerHTML = ''; // Clear previous media
+    mediaContainer.innerHTML = ''; 
     
     // --- SPOTIFY LOGIC ---
     if (clue.type === 'spotify' && clue.url) {
@@ -80,7 +94,6 @@ function handleClueClick(col, row, clue, cellElement) {
         iframe.src = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`;
         iframe.width = "100%";
         iframe.height = "152";
-        //iframe.frameBorder = "0";
         iframe.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";
         iframe.style.borderRadius = "12px";
         
@@ -97,11 +110,9 @@ function handleClueClick(col, row, clue, cellElement) {
         
         if (videoId) {
             const iframe = document.createElement('iframe');
-            // We do NOT use autoplay here so you have full control over when the audio starts!
             iframe.src = `https://www.youtube.com/embed/${videoId}?controls=1`;
             iframe.width = "100%";
-            iframe.height = "200"; // A nice height for the control panel
-            //iframe.frameBorder = "0";
+            iframe.height = "200"; 
             iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
             iframe.allowFullscreen = true;
             iframe.style.borderRadius = "8px";
@@ -114,20 +125,36 @@ function handleClueClick(col, row, clue, cellElement) {
     activeClueId = `clue-${col}-${row}`;
     currentClueValue = parseInt(clue.points, 10) || 0;
 
-    // Beam the command to the big screen
+    // NEW: Beam the correct command to the big screen
+    if (isDailyDouble) {
+        gameChannel.postMessage({ 
+            type: 'SHOW_DAILY_DOUBLE', 
+            clueId: activeClueId 
+        });
+    } else {
+        gameChannel.postMessage({ 
+            type: 'SHOW_PROMPT', 
+            clueId: activeClueId, 
+            prompt: clue.prompt,
+            mediaType: clue.type || 'text',
+            mediaUrl: clue.url || null
+        });
+    }
+}
+
+// NEW: Show Prompt logic dynamically fetches data to handle Daily Double reveal correctly
+document.getElementById('btn-show-prompt').addEventListener('click', () => {
+    if (!activeClueId) return;
+        
+    const [_, col, row] = activeClueId.split('-');
+    const clue = gameData.categories[col].clues[row];
+
     gameChannel.postMessage({ 
         type: 'SHOW_PROMPT', 
-        clueId: activeClueId, 
         prompt: clue.prompt,
         mediaType: clue.type || 'text',
         mediaUrl: clue.url || null
     });
-}
-
-// Wire up the Control Panel Buttons
-document.getElementById('btn-show-prompt').addEventListener('click', () => {
-    const promptText = document.getElementById('mod-prompt-text').textContent;
-    gameChannel.postMessage({ type: 'SHOW_PROMPT', prompt: promptText });
 });
 
 document.getElementById('btn-show-answer').addEventListener('click', () => {
@@ -141,17 +168,12 @@ document.getElementById('btn-close-clue').addEventListener('click', () => {
     document.getElementById('current-category').textContent = 'Category - Point Value';
     document.getElementById('mod-prompt-text').textContent = 'Select a question from the board on the left.';
     document.getElementById('mod-response-text').textContent = '...';
-
-    // NEW: Destroy the Spotify player to stop the music!
     document.getElementById('mod-media-container').innerHTML = '';
 
     activeClueId = null;
-    currentClueValue = 0; // Reset point value
+    currentClueValue = 0; 
 });
 
-// --- NEW SCORE BUTTON LOGIC ---
-
-// Helper function to attach click events to a team's row
 function attachTeamListeners(teamDiv) {
     const minusBtn = teamDiv.querySelector('.minus');
     const plusBtn = teamDiv.querySelector('.plus');
@@ -159,7 +181,6 @@ function attachTeamListeners(teamDiv) {
     const nameInput = teamDiv.querySelector('input');
 
     plusBtn.addEventListener('click', () => {
-        // Read the current score directly from the HTML to prevent math errors
         let score = parseInt(scoreDisplay.textContent, 10) || 0;
         score += currentClueValue;
         scoreDisplay.textContent = score;
@@ -176,15 +197,12 @@ function attachTeamListeners(teamDiv) {
     nameInput.addEventListener('input', () => broadcastScores());
 }
 
-// Attach listeners to the 3 teams already hardcoded in the HTML
 document.querySelectorAll('.team').forEach(attachTeamListeners);
 
-// Handle the "Add New Team" button
 document.getElementById('btn-add-team').addEventListener('click', () => {
     const teamContainer = document.getElementById('team-scores');
-    const teamCount = document.querySelectorAll('.team').length + 1; // Figure out what number this team is
+    const teamCount = document.querySelectorAll('.team').length + 1; 
     
-    // Create the HTML for the new team row
     const newTeam = document.createElement('div');
     newTeam.className = 'team';
     newTeam.innerHTML = `
@@ -196,17 +214,11 @@ document.getElementById('btn-add-team').addEventListener('click', () => {
         </div>
     `;
     
-    // Insert it right above the "Add New Team" button
     teamContainer.insertBefore(newTeam, document.getElementById('btn-add-team'));
-    
-    // Attach the math logic to this new row
     attachTeamListeners(newTeam);
-    
-    // Beam the updated list to the big screen!
     broadcastScores(); 
 });
 
-// Function to read all scores and beam them to the player window
 function broadcastScores() {
     const teams = Array.from(document.querySelectorAll('.team')).map(teamDiv => ({
         name: teamDiv.querySelector('input').value,
@@ -216,35 +228,27 @@ function broadcastScores() {
     gameChannel.postMessage({ type: 'UPDATE_SCORES', teams: teams });
 }
 
-// --- RESET GAME LOGIC ---
 document.getElementById('btn-reset-game').addEventListener('click', () => {
-    // 1. Confirm with the moderator to prevent accidental clicks
     if (!confirm("Are you sure you want to reset the game? This will clear all scores and board progress.")) {
         return; 
     }
 
-    // 2. Clear the 'answered' state from the moderator's mini-board
     document.querySelectorAll('.cell.points').forEach(cell => {
         cell.classList.remove('answered');
     });
 
-    // 3. Reset all team scores back to 0
     document.querySelectorAll('.team').forEach(teamDiv => {
         teamDiv.querySelector('.score').textContent = '0';
     });
 
-    // 4. Reset the Active Question Control Panel
     document.getElementById('current-category').textContent = 'Category - Point Value';
     document.getElementById('mod-prompt-text').textContent = 'Select a question from the board on the left.';
     document.getElementById('mod-response-text').textContent = '...';
-
-    // NEW: Destroy the Spotify player to stop the music!
     document.getElementById('mod-media-container').innerHTML = '';
 
     activeClueId = null;
     currentClueValue = 0;
 
-    // 5. Broadcast the reset command and the new zeroed scores to the Player screen
     gameChannel.postMessage({ type: 'RESET_GAME' });
     broadcastScores(); 
 });

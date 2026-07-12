@@ -1,6 +1,5 @@
 const gameChannel = new BroadcastChannel('jeopardy_game');
 
-// Let the moderator window know the player screen is open
 gameChannel.postMessage({ type: 'PLAYER_READY' });
 
 gameChannel.onmessage = (event) => {
@@ -9,6 +8,24 @@ gameChannel.onmessage = (event) => {
     if (message.type === 'LOAD_GAME') {
         buildPlayerBoard(message.data);
     } 
+    // NEW: Handle the Daily Double splash screen
+    else if (message.type === 'SHOW_DAILY_DOUBLE') {
+        if (message.clueId) {
+             const gridCell = document.getElementById(message.clueId);
+             if (gridCell) gridCell.classList.add('answered');
+        }
+        
+        const overlay = document.getElementById('active-clue-overlay');
+        const textContainer = document.getElementById('clue-text');
+        
+        const existingMedia = document.getElementById('media-container');
+        if (existingMedia) existingMedia.remove();
+
+        // Display the Daily Double Graphic
+        textContainer.innerHTML = "<div style='font-size: 8vw; color: var(--neon-yellow); text-transform: uppercase; font-weight: 900; letter-spacing: 5px; text-shadow: 0 0 30px rgba(255, 204, 0, 0.8), 5px 5px 10px rgba(0,0,0,1);'>Daily Double</div>";
+
+        overlay.classList.add('show-overlay');
+    }
     else if (message.type === 'SHOW_PROMPT') {
         if (message.clueId) {
              const gridCell = document.getElementById(message.clueId);
@@ -18,11 +35,9 @@ gameChannel.onmessage = (event) => {
         const overlay = document.getElementById('active-clue-overlay');
         const textContainer = document.getElementById('clue-text');
         
-        // Clear any old media
         const existingMedia = document.getElementById('media-container');
         if (existingMedia) existingMedia.remove();
 
-       // 1. Handle Images (Keep this exactly as it is)
         if (message.mediaType === 'image' && message.mediaUrl) {
             const img = document.createElement('img');
             img.src = message.mediaUrl;
@@ -31,30 +46,21 @@ gameChannel.onmessage = (event) => {
             overlay.insertBefore(img, textContainer);
             textContainer.textContent = message.prompt;
         } 
-        
-        // 2. Handle YouTube and Spotify Audio (Host controls them via the Moderator Screen!)
         else if (message.mediaType === 'youtube' || message.mediaType === 'spotify') {
             textContainer.innerHTML = "🎧 <em>Listening to Audio Clue...</em><br><br>" + message.prompt;
         }
-        
-        // Command 6: Reset the board
         else if (message.type === 'RESET_GAME') {
-            // Remove the 'answered' class from every point cell to make them visible again
             document.querySelectorAll('.cell.points').forEach(cell => {
                 cell.classList.remove('answered');
             });
             
-            // Force the overlay to close just in case a question was left open
             document.getElementById('active-clue-overlay').classList.remove('show-overlay');
             
-            // Destroy any media currently playing
             const existingMedia = document.getElementById('media-container');
             if (existingMedia) existingMedia.remove();
         }
-        
-        // 3. Handle Standard Text
         else {
-            textContainer.innerHTML = message.prompt.replace(/\n/g, '<br>'); // Supports new lines
+            textContainer.innerHTML = message.prompt.replace(/\n/g, '<br>'); 
         }
 
         overlay.classList.add('show-overlay');
@@ -62,7 +68,6 @@ gameChannel.onmessage = (event) => {
     else if (message.type === 'SHOW_ANSWER') {
         document.getElementById('clue-text').textContent = message.answer;
     } 
-   // Destroy the iframe to stop the audio when we close the clue
     else if (message.type === 'CLOSE_CLUE') {
         const overlay = document.getElementById('active-clue-overlay');
         overlay.classList.remove('show-overlay');
@@ -73,7 +78,6 @@ gameChannel.onmessage = (event) => {
     else if (message.type === 'UPDATE_SCORES') {
         const scoreBoard = document.getElementById('score-board');
         
-        // Check if we need to create new team blocks on the big screen
         while (scoreBoard.children.length < message.teams.length) {
             const newIndex = scoreBoard.children.length;
             const newTeamDiv = document.createElement('div');
@@ -86,7 +90,6 @@ gameChannel.onmessage = (event) => {
             scoreBoard.appendChild(newTeamDiv);
         }
 
-        // Now update the text and numbers for all teams
         message.teams.forEach((team, index) => {
             const teamDiv = document.getElementById(`display-team-${index}`);
             if (teamDiv) {
