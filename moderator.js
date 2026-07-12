@@ -3,7 +3,7 @@ const gameChannel = new BroadcastChannel('jeopardy_game');
 let gameData = null;
 let activeClueId = null; 
 let currentClueValue = 0; 
-let dailyDoubleId = null; // NEW: Track the Daily Double location
+let dailyDoubleId = null; // Tracks the Daily Double location
 
 document.getElementById('game-file').addEventListener('change', handleFileUpload);
 
@@ -36,7 +36,7 @@ function buildModeratorBoard(data) {
     const board = document.getElementById('mini-board');
     board.innerHTML = ''; 
 
-    // NEW: Randomly select the Daily Double location
+    // Randomly select the Daily Double location
     const randomCol = Math.floor(Math.random() * data.categories.length);
     const randomRow = Math.floor(Math.random() * 5);
     dailyDoubleId = `clue-${randomCol}-${randomRow}`;
@@ -55,7 +55,7 @@ function buildModeratorBoard(data) {
             pointsDiv.className = 'cell points';
             pointsDiv.id = `mod-clue-${col}-${row}`;
             
-            // NEW: Mark it clearly for the moderator
+            // Mark it clearly for the moderator
             if (`clue-${col}-${row}` === dailyDoubleId) {
                 pointsDiv.classList.add('daily-double-mod');
                 pointsDiv.innerHTML = `${clue.points}<br><span style="font-size: 0.7rem; color: var(--neon-yellow);">(DD)</span>`;
@@ -77,9 +77,8 @@ function handleClueClick(col, row, clue, cellElement) {
     const isDailyDouble = (`clue-${col}-${row}` === dailyDoubleId);
     const categoryTitle = document.getElementById('current-category');
 
-    // NEW: Dynamic Title & Wager Input Logic
+    // Dynamic Title & Wager Input Logic
     if (isDailyDouble) {
-        // Inject a custom Wager input field specifically for the Daily Double
         categoryTitle.innerHTML = `
             ${gameData.categories[col].name} - 🚨 [DAILY DOUBLE] 🚨
             <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
@@ -88,24 +87,20 @@ function handleClueClick(col, row, clue, cellElement) {
             </div>
         `;
 
-        currentClueValue = 0; // Default to 0 so an accidental click doesn't add standard points
+        currentClueValue = 0;
 
-        // Listen for the host typing in the wager box and update the global point value on the fly
         document.getElementById('wager-input').addEventListener('input', (e) => {
             currentClueValue = parseInt(e.target.value, 10) || 0;
         });
 
     } else {
-        // Standard non-Daily Double behavior
         categoryTitle.textContent = `${gameData.categories[col].name} - ${clue.points}`;
         currentClueValue = parseInt(clue.points, 10) || 0;
     }
 
-    // Populate the Prompt and Response text
     document.getElementById('mod-prompt-text').textContent = clue.prompt + (clue.url ? ` (${clue.type.toUpperCase()})` : '');
     document.getElementById('mod-response-text').textContent = clue.response;
     
-    // Media handling
     const mediaContainer = document.getElementById('mod-media-container');
     mediaContainer.innerHTML = ''; 
     
@@ -115,14 +110,12 @@ function handleClueClick(col, row, clue, cellElement) {
         if (clue.url.includes("track/")) {
             trackId = clue.url.split('track/')[1].split('?')[0];
         }
-        
         const iframe = document.createElement('iframe');
         iframe.src = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`;
         iframe.width = "100%";
         iframe.height = "152";
         iframe.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";
         iframe.style.borderRadius = "12px";
-        
         mediaContainer.appendChild(iframe);
     }
     // --- YOUTUBE LOGIC ---
@@ -133,7 +126,6 @@ function handleClueClick(col, row, clue, cellElement) {
         } else if (clue.url.includes("youtu.be/")) {
             videoId = clue.url.split('youtu.be/')[1].split('?')[0];
         }
-        
         if (videoId) {
             const iframe = document.createElement('iframe');
             iframe.src = `https://www.youtube.com/embed/${videoId}?controls=1`;
@@ -142,7 +134,6 @@ function handleClueClick(col, row, clue, cellElement) {
             iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
             iframe.allowFullscreen = true;
             iframe.style.borderRadius = "8px";
-            
             mediaContainer.appendChild(iframe);
         }
     }
@@ -150,7 +141,6 @@ function handleClueClick(col, row, clue, cellElement) {
     cellElement.classList.add('answered');
     activeClueId = `clue-${col}-${row}`;
 
-    // Beam the correct command to the big screen
     if (isDailyDouble) {
         gameChannel.postMessage({ 
             type: 'SHOW_DAILY_DOUBLE', 
@@ -167,7 +157,6 @@ function handleClueClick(col, row, clue, cellElement) {
     }
 }
 
-// NEW: Show Prompt logic dynamically fetches data to handle Daily Double reveal correctly
 document.getElementById('btn-show-prompt').addEventListener('click', () => {
     if (!activeClueId) return;
         
@@ -204,6 +193,7 @@ function attachTeamListeners(teamDiv) {
     const plusBtn = teamDiv.querySelector('.plus');
     const scoreDisplay = teamDiv.querySelector('.score');
     const nameInput = teamDiv.querySelector('input');
+    const removeBtn = teamDiv.querySelector('.remove-team'); 
 
     plusBtn.addEventListener('click', () => {
         let score = parseInt(scoreDisplay.textContent, 10) || 0;
@@ -220,22 +210,34 @@ function attachTeamListeners(teamDiv) {
     });
     
     nameInput.addEventListener('input', () => broadcastScores());
+
+    if (removeBtn) {
+        removeBtn.addEventListener('click', () => {
+            if (confirm(`Remove ${nameInput.value}?`)) {
+                teamDiv.remove(); 
+                broadcastScores(); 
+            }
+        });
+    }
 }
 
 document.querySelectorAll('.team').forEach(attachTeamListeners);
 
+// Handle the "Add New Team" button (Unified logic to prevent duplicates)
 document.getElementById('btn-add-team').addEventListener('click', () => {
     const teamContainer = document.getElementById('team-scores');
     const teamCount = document.querySelectorAll('.team').length + 1; 
     
     const newTeam = document.createElement('div');
     newTeam.className = 'team';
+    
     newTeam.innerHTML = `
         <input type="text" value="Team ${teamCount}">
         <div class="score-controls">
             <button class="minus">-</button>
             <span class="score">0</span>
             <button class="plus">+</button>
+            <button class="remove-team" title="Remove Team">✖</button>
         </div>
     `;
     
@@ -276,4 +278,24 @@ document.getElementById('btn-reset-game').addEventListener('click', () => {
 
     gameChannel.postMessage({ type: 'RESET_GAME' });
     broadcastScores(); 
+});
+
+// --- FINAL JEOPARDY LOGIC ---
+document.getElementById('btn-fj-category').addEventListener('click', () => {
+    const cat = document.getElementById('fj-category').value || 'Final Jeopardy';
+    gameChannel.postMessage({ type: 'SHOW_FJ_CATEGORY', category: cat });
+});
+
+document.getElementById('btn-fj-prompt').addEventListener('click', () => {
+    const prompt = document.getElementById('fj-prompt').value || '...';
+    gameChannel.postMessage({ type: 'SHOW_FJ_PROMPT', prompt: prompt });
+});
+
+document.getElementById('btn-fj-answer').addEventListener('click', () => {
+    const answer = document.getElementById('fj-answer').value || '...';
+    gameChannel.postMessage({ type: 'SHOW_FJ_ANSWER', answer: answer });
+});
+
+document.getElementById('fj-wager-input').addEventListener('input', (e) => {
+    currentClueValue = parseInt(e.target.value, 10) || 0;
 });

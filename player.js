@@ -8,7 +8,6 @@ gameChannel.onmessage = (event) => {
     if (message.type === 'LOAD_GAME') {
         buildPlayerBoard(message.data);
     } 
-    // NEW: Handle the Daily Double splash screen
     else if (message.type === 'SHOW_DAILY_DOUBLE') {
         if (message.clueId) {
              const gridCell = document.getElementById(message.clueId);
@@ -21,7 +20,6 @@ gameChannel.onmessage = (event) => {
         const existingMedia = document.getElementById('media-container');
         if (existingMedia) existingMedia.remove();
 
-        // Display the Daily Double Graphic
         textContainer.innerHTML = "<div style='font-size: 8vw; color: var(--neon-yellow); text-transform: uppercase; font-weight: 900; letter-spacing: 5px; text-shadow: 0 0 30px rgba(255, 204, 0, 0.8), 5px 5px 10px rgba(0,0,0,1);'>Daily Double</div>";
 
         overlay.classList.add('show-overlay');
@@ -78,25 +76,56 @@ gameChannel.onmessage = (event) => {
     else if (message.type === 'UPDATE_SCORES') {
         const scoreBoard = document.getElementById('score-board');
         
+        // 1. Remove extra teams if the host deleted one
+        while (scoreBoard.children.length > message.teams.length) {
+            scoreBoard.removeChild(scoreBoard.lastChild);
+        }
+
+        // 2. Add new teams if the host added one
         while (scoreBoard.children.length < message.teams.length) {
-            const newIndex = scoreBoard.children.length;
             const newTeamDiv = document.createElement('div');
             newTeamDiv.className = 'player-team';
-            newTeamDiv.id = `display-team-${newIndex}`;
             newTeamDiv.innerHTML = `
-                <div class="team-name">Team ${newIndex + 1}</div>
-                <div class="team-score">0</div>
+                <div class="team-name"></div>
+                <div class="team-score"></div>
             `;
             scoreBoard.appendChild(newTeamDiv);
         }
 
+        // 3. Update the text and scores for all currently displaying teams mapped by array index
         message.teams.forEach((team, index) => {
-            const teamDiv = document.getElementById(`display-team-${index}`);
+            const teamDiv = scoreBoard.children[index];
             if (teamDiv) {
+                teamDiv.id = `display-team-${index}`; 
                 teamDiv.querySelector('.team-name').textContent = team.name;
                 teamDiv.querySelector('.team-score').textContent = team.score;
             }
         });
+    }
+    else if (message.type === 'SHOW_FJ_CATEGORY') {
+        const overlay = document.getElementById('active-clue-overlay');
+        const textContainer = document.getElementById('clue-text');
+        
+        const existingMedia = document.getElementById('media-container');
+        if (existingMedia) existingMedia.remove();
+
+        textContainer.innerHTML = `
+            <div style='font-size: 4vw; color: #b0b0b0; text-transform: uppercase; font-weight: 700; letter-spacing: 2px;'>Final Jeopardy Category</div>
+            <div style='font-size: 7vw; color: var(--neon-yellow); text-transform: uppercase; font-weight: 900; margin-top: 15px; text-shadow: 0 0 20px rgba(255,204,0,0.5);'>${message.category}</div>
+        `;
+        overlay.classList.add('show-overlay');
+    }
+    else if (message.type === 'SHOW_FJ_PROMPT') {
+        const overlay = document.getElementById('active-clue-overlay');
+        const textContainer = document.getElementById('clue-text');
+        
+        textContainer.innerHTML = message.prompt.replace(/\n/g, '<br>');
+        overlay.classList.add('show-overlay');
+    }
+    else if (message.type === 'SHOW_FJ_ANSWER') {
+        const textContainer = document.getElementById('clue-text');
+        
+        textContainer.innerHTML += `<br><br><span style="color: #10b981; font-size: 4vw; text-shadow: 0 0 15px rgba(16, 185, 129, 0.5);">${message.answer.replace(/\n/g, '<br>')}</span>`;
     }
 };
 
