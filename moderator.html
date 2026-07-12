@@ -65,6 +65,22 @@
                 </div>
             </div>
 
+            <div class="panel-section" id="timer-controls">
+                <h2>Countdown Timer</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="timer-input" value="30" style="width: 60px; padding: 6px; background: #1a1a1a; color: white; border: 1px solid var(--border-color); border-radius: 4px; font-size: 1rem;">
+                        <span style="color: var(--text-secondary); font-weight: bold;">Secs</span>
+                    </div>
+                    <div id="mod-timer-display" style="font-size: 2rem; color: var(--neon-yellow); font-weight: 900;">30</div>
+                </div>
+                <div class="action-buttons" style="flex-direction: row; margin-top: 15px; display: flex; gap: 10px;">
+                    <button id="btn-start-timer" style="background-color: var(--accent-green); flex: 1;">Start</button>
+                    <button id="btn-stop-timer" style="background-color: var(--accent-red); flex: 1;">Stop</button>
+                    <button id="btn-reset-timer" style="background-color: #555; flex: 1;">Reset</button>
+                </div>
+            </div>
+
             <div class="panel-section" id="team-scores">
                 <h2>Teams & Scores</h2>
                 

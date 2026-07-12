@@ -76,12 +76,10 @@ gameChannel.onmessage = (event) => {
     else if (message.type === 'UPDATE_SCORES') {
         const scoreBoard = document.getElementById('score-board');
         
-        // 1. Remove extra teams if the host deleted one
         while (scoreBoard.children.length > message.teams.length) {
             scoreBoard.removeChild(scoreBoard.lastChild);
         }
 
-        // 2. Add new teams if the host added one
         while (scoreBoard.children.length < message.teams.length) {
             const newTeamDiv = document.createElement('div');
             newTeamDiv.className = 'player-team';
@@ -92,7 +90,6 @@ gameChannel.onmessage = (event) => {
             scoreBoard.appendChild(newTeamDiv);
         }
 
-        // 3. Update the text and scores for all currently displaying teams mapped by array index
         message.teams.forEach((team, index) => {
             const teamDiv = scoreBoard.children[index];
             if (teamDiv) {
@@ -126,6 +123,25 @@ gameChannel.onmessage = (event) => {
         const textContainer = document.getElementById('clue-text');
         
         textContainer.innerHTML += `<br><br><span style="color: #10b981; font-size: 4vw; text-shadow: 0 0 15px rgba(16, 185, 129, 0.5);">${message.answer.replace(/\n/g, '<br>')}</span>`;
+    }
+    // NEW: Handle Timer Sync Commands
+    else if (message.type === 'SYNC_TIMER') {
+        const timerEl = document.getElementById('player-timer');
+        timerEl.classList.remove('hidden');
+        timerEl.textContent = message.time;
+        
+        if (message.time <= 0) {
+            timerEl.classList.add('time-up');
+        } else {
+            timerEl.classList.remove('time-up');
+        }
+    }
+    else if (message.type === 'HIDE_TIMER') {
+        const timerEl = document.getElementById('player-timer');
+        if (timerEl) {
+            timerEl.classList.add('hidden');
+            timerEl.classList.remove('time-up');
+        }
     }
 };
 

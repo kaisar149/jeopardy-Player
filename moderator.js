@@ -3,7 +3,9 @@ const gameChannel = new BroadcastChannel('jeopardy_game');
 let gameData = null;
 let activeClueId = null; 
 let currentClueValue = 0; 
-let dailyDoubleId = null; // Tracks the Daily Double location
+let dailyDoubleId = null; 
+let timerInterval = null; // NEW: Timer variables
+let timerSeconds = 30;
 
 document.getElementById('game-file').addEventListener('change', handleFileUpload);
 
@@ -36,7 +38,6 @@ function buildModeratorBoard(data) {
     const board = document.getElementById('mini-board');
     board.innerHTML = ''; 
 
-    // Randomly select the Daily Double location
     const randomCol = Math.floor(Math.random() * data.categories.length);
     const randomRow = Math.floor(Math.random() * 5);
     dailyDoubleId = `clue-${randomCol}-${randomRow}`;
@@ -55,7 +56,6 @@ function buildModeratorBoard(data) {
             pointsDiv.className = 'cell points';
             pointsDiv.id = `mod-clue-${col}-${row}`;
             
-            // Mark it clearly for the moderator
             if (`clue-${col}-${row}` === dailyDoubleId) {
                 pointsDiv.classList.add('daily-double-mod');
                 pointsDiv.innerHTML = `${clue.points}<br><span style="font-size: 0.7rem; color: var(--neon-yellow);">(DD)</span>`;
@@ -77,7 +77,6 @@ function handleClueClick(col, row, clue, cellElement) {
     const isDailyDouble = (`clue-${col}-${row}` === dailyDoubleId);
     const categoryTitle = document.getElementById('current-category');
 
-    // Dynamic Title & Wager Input Logic
     if (isDailyDouble) {
         categoryTitle.innerHTML = `
             ${gameData.categories[col].name} - 🚨 [DAILY DOUBLE] 🚨
@@ -104,7 +103,6 @@ function handleClueClick(col, row, clue, cellElement) {
     const mediaContainer = document.getElementById('mod-media-container');
     mediaContainer.innerHTML = ''; 
     
-    // --- SPOTIFY LOGIC ---
     if (clue.type === 'spotify' && clue.url) {
         let trackId = "";
         if (clue.url.includes("track/")) {
@@ -118,7 +116,6 @@ function handleClueClick(col, row, clue, cellElement) {
         iframe.style.borderRadius = "12px";
         mediaContainer.appendChild(iframe);
     }
-    // --- YOUTUBE LOGIC ---
     else if (clue.type === 'youtube' && clue.url) {
         let videoId = "";
         if (clue.url.includes("v=")) {
@@ -186,6 +183,10 @@ document.getElementById('btn-close-clue').addEventListener('click', () => {
 
     activeClueId = null;
     currentClueValue = 0; 
+    
+    // NEW: Reset and hide timer when closing clue
+    if (timerInterval) clearInterval(timerInterval);
+    gameChannel.postMessage({ type: 'HIDE_TIMER' });
 });
 
 function attachTeamListeners(teamDiv) {
@@ -223,7 +224,6 @@ function attachTeamListeners(teamDiv) {
 
 document.querySelectorAll('.team').forEach(attachTeamListeners);
 
-// Handle the "Add New Team" button (Unified logic to prevent duplicates)
 document.getElementById('btn-add-team').addEventListener('click', () => {
     const teamContainer = document.getElementById('team-scores');
     const teamCount = document.querySelectorAll('.team').length + 1; 
@@ -275,6 +275,10 @@ document.getElementById('btn-reset-game').addEventListener('click', () => {
 
     activeClueId = null;
     currentClueValue = 0;
+    
+    // NEW: Stop the timer if running
+    if (timerInterval) clearInterval(timerInterval);
+    gameChannel.postMessage({ type: 'HIDE_TIMER' });
 
     gameChannel.postMessage({ type: 'RESET_GAME' });
     broadcastScores(); 
@@ -298,4 +302,40 @@ document.getElementById('btn-fj-answer').addEventListener('click', () => {
 
 document.getElementById('fj-wager-input').addEventListener('input', (e) => {
     currentClueValue = parseInt(e.target.value, 10) || 0;
+});
+
+// --- TIMER LOGIC ---
+const modTimerDisplay = document.getElementById('mod-timer-display');
+const timerInput = document.getElementById('timer-input');
+
+document.getElementById('btn-start-timer').addEventListener('click', () => {
+    if (timerInterval) clearInterval(timerInterval);
+    
+    // Grab the time from the input box
+    timerSeconds = parseInt(timerInput.value, 10) || 0;
+    modTimerDisplay.textContent = timerSeconds;
+    gameChannel.postMessage({ type: 'SYNC_TIMER', time: timerSeconds });
+
+    // Tick down every 1 second
+    timerInterval = setInterval(() => {
+        timerSeconds--;
+        if (timerSeconds <= 0) {
+            timerSeconds = 0;
+            clearInterval(timerInterval);
+        }
+        modTimerDisplay.textContent = timerSeconds;
+        gameChannel.postMessage({ type: 'SYNC_TIMER', time: timerSeconds });
+    }, 1000);
+});
+
+document.getElementById('btn-stop-timer').addEventListener('click', () => {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInput.value = timerSeconds; // Overwrite input so "Start" resumes from the paused time
+});
+
+document.getElementById('btn-reset-timer').addEventListener('click', () => {
+    if (timerInterval) clearInterval(timerInterval);
+    timerSeconds = parseInt(timerInput.value, 10) || 30; 
+    modTimerDisplay.textContent = timerSeconds;
+    gameChannel.postMessage({ type: 'HIDE_TIMER' }); // Hide it on the big screen until started again
 });
