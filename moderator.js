@@ -75,11 +75,37 @@ function buildModeratorBoard(data) {
 
 function handleClueClick(col, row, clue, cellElement) {
     const isDailyDouble = (`clue-${col}-${row}` === dailyDoubleId);
+    const categoryTitle = document.getElementById('current-category');
 
-    document.getElementById('current-category').textContent = `${gameData.categories[col].name} - ${clue.points} ${isDailyDouble ? '🚨 [DAILY DOUBLE] 🚨' : ''}`;
+    // NEW: Dynamic Title & Wager Input Logic
+    if (isDailyDouble) {
+        // Inject a custom Wager input field specifically for the Daily Double
+        categoryTitle.innerHTML = `
+            ${gameData.categories[col].name} - 🚨 [DAILY DOUBLE] 🚨
+            <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                <label style="font-size: 0.9rem; color: var(--neon-yellow); text-transform: uppercase; font-weight: bold;">Enter Wager:</label>
+                <input type="number" id="wager-input" placeholder="0" style="padding: 6px; font-size: 1rem; font-family: 'Inter', sans-serif; background: #1a1a1a; color: white; border: 1px solid var(--neon-yellow); border-radius: 4px; width: 120px;">
+            </div>
+        `;
+
+        currentClueValue = 0; // Default to 0 so an accidental click doesn't add standard points
+
+        // Listen for the host typing in the wager box and update the global point value on the fly
+        document.getElementById('wager-input').addEventListener('input', (e) => {
+            currentClueValue = parseInt(e.target.value, 10) || 0;
+        });
+
+    } else {
+        // Standard non-Daily Double behavior
+        categoryTitle.textContent = `${gameData.categories[col].name} - ${clue.points}`;
+        currentClueValue = parseInt(clue.points, 10) || 0;
+    }
+
+    // Populate the Prompt and Response text
     document.getElementById('mod-prompt-text').textContent = clue.prompt + (clue.url ? ` (${clue.type.toUpperCase()})` : '');
     document.getElementById('mod-response-text').textContent = clue.response;
     
+    // Media handling
     const mediaContainer = document.getElementById('mod-media-container');
     mediaContainer.innerHTML = ''; 
     
@@ -123,9 +149,8 @@ function handleClueClick(col, row, clue, cellElement) {
     
     cellElement.classList.add('answered');
     activeClueId = `clue-${col}-${row}`;
-    currentClueValue = parseInt(clue.points, 10) || 0;
 
-    // NEW: Beam the correct command to the big screen
+    // Beam the correct command to the big screen
     if (isDailyDouble) {
         gameChannel.postMessage({ 
             type: 'SHOW_DAILY_DOUBLE', 
