@@ -1,5 +1,19 @@
-const gameChannel = new BroadcastChannel('jeopardy_game');
+// NEW: Connect to the Python WebSocket Server
+const socket = io();
 
+const gameChannel = {
+    postMessage: (data) => {
+        socket.emit('game_event', data);
+    }
+};
+
+socket.on('game_event', (data) => {
+    if (typeof gameChannel.onmessage === 'function') {
+        gameChannel.onmessage({ data: data });
+    }
+});
+
+// --- EXISTING GAME LOGIC ---
 gameChannel.postMessage({ type: 'PLAYER_READY' });
 
 gameChannel.onmessage = (event) => {
@@ -124,7 +138,6 @@ gameChannel.onmessage = (event) => {
         
         textContainer.innerHTML += `<br><br><span style="color: #10b981; font-size: 4vw; text-shadow: 0 0 15px rgba(16, 185, 129, 0.5);">${message.answer.replace(/\n/g, '<br>')}</span>`;
     }
-    // NEW: Handle Timer Sync Commands
     else if (message.type === 'SYNC_TIMER') {
         const timerEl = document.getElementById('player-timer');
         timerEl.classList.remove('hidden');

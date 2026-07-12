@@ -1,4 +1,19 @@
-const gameChannel = new BroadcastChannel('jeopardy_game');
+// NEW: Connect to the Python WebSocket Server
+const socket = io();
+
+const gameChannel = {
+    postMessage: (data) => {
+        socket.emit('game_event', data);
+    }
+};
+
+socket.on('game_event', (data) => {
+    if (typeof gameChannel.onmessage === 'function') {
+        gameChannel.onmessage({ data: data });
+    }
+});
+
+// --- EXISTING BUZZER LOGIC ---
 let myTeam = "";
 let isEnabled = false;
 
@@ -8,14 +23,13 @@ document.getElementById('btn-join').addEventListener('click', () => {
     document.getElementById('buzzer-screen').classList.remove('hidden');
 });
 
-// The entire screen is one giant button
 document.getElementById('buzzer-screen').addEventListener('mousedown', buzzIn);
 document.getElementById('buzzer-screen').addEventListener('touchstart', buzzIn);
 
 function buzzIn(e) {
-    e.preventDefault(); // Prevents double-firing on touch screens
+    e.preventDefault(); 
     if (isEnabled) {
-        isEnabled = false; // Immediately lock to prevent double-buzzing
+        isEnabled = false; 
         gameChannel.postMessage({ type: 'BUZZ_IN', team: myTeam });
     }
 }

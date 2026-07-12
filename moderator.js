@@ -1,12 +1,27 @@
-const gameChannel = new BroadcastChannel('jeopardy_game');
+// NEW: Connect to the Python WebSocket Server
+const socket = io();
 
+// FAKE the old BroadcastChannel so the rest of the code works natively
+const gameChannel = {
+    postMessage: (data) => {
+        socket.emit('game_event', data);
+    }
+};
+
+socket.on('game_event', (data) => {
+    if (typeof gameChannel.onmessage === 'function') {
+        gameChannel.onmessage({ data: data });
+    }
+});
+
+// --- EXISTING GAME LOGIC ---
 let gameData = null;
 let activeClueId = null; 
 let currentClueValue = 0; 
 let dailyDoubleId = null; 
 let timerInterval = null; 
 let timerSeconds = 30;
-let buzzerOrder = []; // NEW: Array to track who buzzed in
+let buzzerOrder = []; 
 
 document.getElementById('game-file').addEventListener('change', handleFileUpload);
 
@@ -17,7 +32,6 @@ gameChannel.onmessage = (event) => {
         gameChannel.postMessage({ type: 'LOAD_GAME', data: gameData });
         setTimeout(broadcastScores, 500);
     }
-    // NEW: Catch buzzers and rank them
     else if (message.type === 'BUZZ_IN') {
         if (!buzzerOrder.includes(message.team)) {
             buzzerOrder.push(message.team);
@@ -96,13 +110,10 @@ function handleClueClick(col, row, clue, cellElement) {
                 <input type="number" id="wager-input" placeholder="0" style="padding: 6px; font-size: 1rem; font-family: 'Inter', sans-serif; background: #1a1a1a; color: white; border: 1px solid var(--neon-yellow); border-radius: 4px; width: 120px;">
             </div>
         `;
-
         currentClueValue = 0;
-
         document.getElementById('wager-input').addEventListener('input', (e) => {
             currentClueValue = parseInt(e.target.value, 10) || 0;
         });
-
     } else {
         categoryTitle.textContent = `${gameData.categories[col].name} - ${clue.points}`;
         currentClueValue = parseInt(clue.points, 10) || 0;
@@ -178,7 +189,6 @@ document.getElementById('btn-show-prompt').addEventListener('click', () => {
         mediaUrl: clue.url || null
     });
 
-    // NEW: Enable buzzers
     buzzerOrder = [];
     renderBuzzerList();
     gameChannel.postMessage({ type: 'ENABLE_BUZZERS' });
@@ -203,7 +213,6 @@ document.getElementById('btn-close-clue').addEventListener('click', () => {
     if (timerInterval) clearInterval(timerInterval);
     gameChannel.postMessage({ type: 'HIDE_TIMER' });
 
-    // NEW: Disable buzzers
     buzzerOrder = [];
     renderBuzzerList();
     gameChannel.postMessage({ type: 'DISABLE_BUZZERS' });
@@ -271,7 +280,6 @@ function broadcastScores() {
         name: teamDiv.querySelector('input').value,
         score: parseInt(teamDiv.querySelector('.score').textContent, 10) || 0
     }));
-    
     gameChannel.postMessage({ type: 'UPDATE_SCORES', teams: teams });
 }
 
@@ -299,7 +307,6 @@ document.getElementById('btn-reset-game').addEventListener('click', () => {
     if (timerInterval) clearInterval(timerInterval);
     gameChannel.postMessage({ type: 'HIDE_TIMER' });
 
-    // NEW: Disable buzzers on reset
     buzzerOrder = [];
     renderBuzzerList();
     gameChannel.postMessage({ type: 'DISABLE_BUZZERS' });
