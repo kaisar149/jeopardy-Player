@@ -1,4 +1,4 @@
-// NEW: Connect to the Python WebSocket Server
+// Connect to the Python WebSocket Server
 const socket = io();
 
 // FAKE the old BroadcastChannel so the rest of the code works natively
@@ -173,6 +173,11 @@ function handleClueClick(col, row, clue, cellElement) {
             mediaType: clue.type || 'text',
             mediaUrl: clue.url || null
         });
+
+        // Instantly activate buzzers on clue click
+        buzzerOrder = [];
+        renderBuzzerList();
+        gameChannel.postMessage({ type: 'ENABLE_BUZZERS' });
     }
 }
 
@@ -224,6 +229,7 @@ function attachTeamListeners(teamDiv) {
     const scoreDisplay = teamDiv.querySelector('.score');
     const nameInput = teamDiv.querySelector('input');
     const removeBtn = teamDiv.querySelector('.remove-team'); 
+    const bonusBtn = teamDiv.querySelector('.bonus-plus'); // Target bonus button
 
     plusBtn.addEventListener('click', () => {
         let score = parseInt(scoreDisplay.textContent, 10) || 0;
@@ -239,6 +245,17 @@ function attachTeamListeners(teamDiv) {
         broadcastScores();
     });
     
+    // Bonus points click listener
+    if (bonusBtn) {
+        bonusBtn.addEventListener('click', () => {
+            let bonusScore = parseInt(document.getElementById('bonus-input').value, 10) || 0;
+            let score = parseInt(scoreDisplay.textContent, 10) || 0;
+            score += bonusScore;
+            scoreDisplay.textContent = score;
+            broadcastScores();
+        });
+    }
+
     nameInput.addEventListener('input', () => broadcastScores());
 
     if (removeBtn) {
@@ -266,6 +283,7 @@ document.getElementById('btn-add-team').addEventListener('click', () => {
             <button class="minus">-</button>
             <span class="score">0</span>
             <button class="plus">+</button>
+            <button class="bonus-plus" title="Add Bonus">+B</button>
             <button class="remove-team" title="Remove Team">✖</button>
         </div>
     `;
@@ -394,4 +412,19 @@ document.getElementById('btn-clear-buzzers').addEventListener('click', () => {
     buzzerOrder = [];
     renderBuzzerList();
     gameChannel.postMessage({ type: 'ENABLE_BUZZERS' }); 
+});
+
+// --- NEXT IN QUEUE LOGIC ---
+document.getElementById('btn-next-buzzer').addEventListener('click', () => {
+    if (buzzerOrder.length > 0) {
+        // Remove the top team from the array
+        buzzerOrder.shift(); 
+        
+        // Re-render the list on the host screen
+        renderBuzzerList(); 
+        
+        // Broadcast the new order. 
+        // The old #2 becomes #1 (Blue Screen), and the dismissed team gets Locked Out (Red Screen).
+        gameChannel.postMessage({ type: 'BUZZER_ORDER', order: buzzerOrder });
+    }
 });

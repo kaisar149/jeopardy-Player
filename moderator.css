@@ -271,20 +271,13 @@ main {
     background-color: var(--accent-red-hover) !important;
 }
 
-/* Daily Double Styling for Host View */
-.cell.points.daily-double-mod {
-    background-color: #8a0303;
-    border-color: var(--neon-yellow);
-    flex-direction: column;
-}
-
-/* Remove Team Button */
-.remove-team {
-    background-color: var(--accent-red) !important;
+/* Bonus Button Styling */
+.bonus-plus {
+    background-color: var(--accent-blue) !important;
     padding: 4px 10px !important;
-    margin-left: 8px;
+    margin-left: 5px;
     font-size: 1rem;
 }
-.remove-team:hover {
-    background-color: var(--accent-red-hover) !important;
+.bonus-plus:hover {
+    background-color: var(--accent-blue-hover) !important;
 }

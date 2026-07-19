@@ -87,6 +87,7 @@
                     <li style="color: #666; font-style: italic;">No buzzes yet.</li>
                 </ul>
                 <div class="action-buttons">
+                    <button id="btn-next-buzzer" style="background-color: var(--neon-yellow); color: var(--bg-dark);">Next in Queue (Dismiss #1)</button>
                     <button id="btn-clear-buzzers" style="background-color: var(--accent-red);">Clear Buzzers & Re-Enable</button>
                 </div>
             </div>
@@ -94,12 +95,18 @@
             <div class="panel-section" id="team-scores">
                 <h2>Teams & Scores</h2>
                 
+                <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                    <label style="font-size: 0.9rem; color: var(--neon-yellow); font-weight: bold;">Bonus Points:</label>
+                    <input type="number" id="bonus-input" placeholder="0" style="padding: 6px; font-size: 1rem; background: #1a1a1a; color: white; border: 1px solid var(--accent-blue); border-radius: 4px; width: 80px;">
+                </div>
+
                 <div class="team">
                     <input type="text" value="Team 1">
                     <div class="score-controls">
                         <button class="minus">-</button>
                         <span class="score">0</span>
                         <button class="plus">+</button>
+                        <button class="bonus-plus" title="Add Bonus">+B</button>
                         <button class="remove-team" title="Remove Team">✖</button>
                     </div>
                 </div>
@@ -110,6 +117,7 @@
                         <button class="minus">-</button>
                         <span class="score">0</span>
                         <button class="plus">+</button>
+                        <button class="bonus-plus" title="Add Bonus">+B</button>
                         <button class="remove-team" title="Remove Team">✖</button>
                     </div>
                 </div>
@@ -120,6 +128,7 @@
                         <button class="minus">-</button>
                         <span class="score">0</span>
                         <button class="plus">+</button>
+                        <button class="bonus-plus" title="Add Bonus">+B</button>
                         <button class="remove-team" title="Remove Team">✖</button>
                     </div>
                 </div>

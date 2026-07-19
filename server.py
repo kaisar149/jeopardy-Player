@@ -10,7 +10,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Serve the Moderator screen as the default homepage
 @app.route('/')
 def index():
-    return send_from_directory('.', 'moderator.html')
+    return send_from_directory('.', 'player.html')
 
 # Serve all other files (HTML, CSS, JS, JSON)
 @app.route('/<path:path>')
